@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
-import { RepoTreeProvider, RepoItem, HomePathItem } from './RepoTreeProvider';
+import { RepoTreeProvider, RepoItem } from './RepoTreeProvider';
 import { getRawHomePaths, setHomePaths, resolvePath } from './homePathManager';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -11,8 +10,10 @@ export function activate(context: vscode.ExtensionContext) {
   const treeView = vscode.window.createTreeView('workspaceManagerView', {
     treeDataProvider: provider,
     showCollapseAll: true,
-    // Enable native checkbox support
-    manageCheckboxStateManually: false,
+    // true = we control checkboxState via refresh(); VS Code won't fire
+    // onDidChangeCheckboxState when our own refresh causes state to temporarily
+    // differ from its internal tracking.
+    manageCheckboxStateManually: true,
   });
 
   // ─── Warn if not in a multi-root workspace ──────────────────────────────────
@@ -31,19 +32,16 @@ export function activate(context: vscode.ExtensionContext) {
         )
         .then((choice) => {
           if (choice === 'Create Workspace File') {
-            vscode.commands.executeCommand(
-              'workbench.action.saveWorkspaceAs'
-            );
+            vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
           }
         });
     }
   }
 
-  // Warn on activation
   checkWorkspaceType();
 
   // ─── Checkbox toggle handler ────────────────────────────────────────────────
-  // Fires when the user checks or unchecks a repo item.
+  // Stages the change as pending — does not apply until Apply is pressed.
 
   context.subscriptions.push(
     treeView.onDidChangeCheckboxState((event) => {
@@ -51,36 +49,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (!(item instanceof RepoItem)) {
           continue;
         }
-
-        const uri = vscode.Uri.file(item.repoPath);
-        const folders = vscode.workspace.workspaceFolders ?? [];
-        const existingIndex = folders.findIndex(
-          (f) => f.uri.fsPath === item.repoPath
-        );
-
-        if (
-          state === vscode.TreeItemCheckboxState.Checked &&
-          existingIndex === -1
-        ) {
-          // Add to workspace
-          vscode.workspace.updateWorkspaceFolders(
-            folders.length, // insert at end
-            0,              // delete count
-            { uri, name: path.basename(item.repoPath) }
-          );
-        } else if (
-          state === vscode.TreeItemCheckboxState.Unchecked &&
-          existingIndex !== -1
-        ) {
-          // Remove from workspace
-          vscode.workspace.updateWorkspaceFolders(
-            existingIndex, // start index
-            1              // delete 1 folder
-          );
-        }
-
-        // Refresh so the description ("in workspace") updates
-        provider.refresh();
+        provider.stagePendingChange(item.repoPath, state);
       }
     })
   );
@@ -98,6 +67,22 @@ export function activate(context: vscode.ExtensionContext) {
       if (e.affectsConfiguration('workspaceManager.homePaths')) {
         provider.refresh();
       }
+    })
+  );
+
+  // ─── Command: Apply Changes ─────────────────────────────────────────────────
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('workspaceManager.applyChanges', () => {
+      provider.applyChanges();
+    })
+  );
+
+  // ─── Command: Uncheck All ──────────────────────────────────────────────────
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('workspaceManager.uncheckAll', () => {
+      provider.uncheckAll();
     })
   );
 
@@ -127,10 +112,7 @@ export function activate(context: vscode.ExtensionContext) {
       const newPath = uris[0].fsPath;
       const current = getRawHomePaths();
 
-      // Avoid duplicates (compare resolved paths)
-      const alreadyExists = current.some(
-        (p) => resolvePath(p) === newPath
-      );
+      const alreadyExists = current.some((p) => resolvePath(p) === newPath);
 
       if (alreadyExists) {
         vscode.window.showInformationMessage(
@@ -147,28 +129,31 @@ export function activate(context: vscode.ExtensionContext) {
   // ─── Command: Remove Home Path ──────────────────────────────────────────────
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('workspaceManager.removeHomePath', async () => {
-      const current = getRawHomePaths();
+    vscode.commands.registerCommand(
+      'workspaceManager.removeHomePath',
+      async () => {
+        const current = getRawHomePaths();
 
-      if (current.length === 0) {
-        vscode.window.showInformationMessage('No home paths configured.');
-        return;
+        if (current.length === 0) {
+          vscode.window.showInformationMessage('No home paths configured.');
+          return;
+        }
+
+        const selected = await vscode.window.showQuickPick(current, {
+          title: 'Remove Home Path',
+          placeHolder: 'Select a home path to remove',
+          canPickMany: true,
+        });
+
+        if (!selected || selected.length === 0) {
+          return;
+        }
+
+        const updated = current.filter((p) => !selected.includes(p));
+        await setHomePaths(updated);
+        provider.refresh();
       }
-
-      const selected = await vscode.window.showQuickPick(current, {
-        title: 'Remove Home Path',
-        placeHolder: 'Select a home path to remove',
-        canPickMany: true,
-      });
-
-      if (!selected || selected.length === 0) {
-        return;
-      }
-
-      const updated = current.filter((p) => !selected.includes(p));
-      await setHomePaths(updated);
-      provider.refresh();
-    })
+    )
   );
 
   // ─── Register the tree view itself ─────────────────────────────────────────

@@ -64,4 +64,4 @@ npx vsce package
 This produces a `.vsix` file. Install it:
 
 - **VS Code:** `code --install-extension workspace-manager-*.vsix`
-- **Cursor:** Open the Extensions panel, click **···** (top right) → **Install from VSIX...**, and select the file.
+- **Cursor:** Open the command palette (**Cmd+Shift+P**), run **Extensions: Install from VSIX...**, and select the file.

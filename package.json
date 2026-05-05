@@ -4,7 +4,7 @@
   "description": "Manage which repos from your home directories are active in the workspace",
   "version": "0.1.0",
   "engines": {
-    "vscode": "^1.118.0"
+    "vscode": "^1.85.0"
   },
   "categories": [
     "Other"
@@ -51,6 +51,16 @@
       {
         "command": "workspaceManager.toggleRepo",
         "title": "Workspace Manager: Toggle Repo"
+      },
+      {
+        "command": "workspaceManager.applyChanges",
+        "title": "Workspace Manager: Apply Changes",
+        "icon": "$(check)"
+      },
+      {
+        "command": "workspaceManager.uncheckAll",
+        "title": "Workspace Manager: Uncheck All",
+        "icon": "$(close-all)"
       }
     ],
     "menus": {
@@ -63,6 +73,16 @@
         {
           "command": "workspaceManager.removeHomePath",
           "when": "view == workspaceManagerView",
+          "group": "navigation"
+        },
+        {
+          "command": "workspaceManager.uncheckAll",
+          "when": "view == workspaceManagerView",
+          "group": "navigation"
+        },
+        {
+          "command": "workspaceManager.applyChanges",
+          "when": "view == workspaceManagerView && workspaceManager.hasPendingChanges",
           "group": "navigation"
         },
         {
@@ -93,7 +113,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.19.39",
-    "@types/vscode": "^1.118.0",
+    "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^3.9.1",
     "typescript": "^5.9.3"
   }
