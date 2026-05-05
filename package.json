@@ -1,0 +1,100 @@
+{
+  "name": "workspace-manager",
+  "displayName": "Workspace Manager",
+  "description": "Manage which repos from your home directories are active in the workspace",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.118.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "workspaceManager",
+          "title": "Workspace Manager",
+          "icon": "$(folder-library)"
+        }
+      ]
+    },
+    "views": {
+      "workspaceManager": [
+        {
+          "id": "workspaceManagerView",
+          "name": "Repositories",
+          "icon": "$(folder-library)"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "workspaceManager.addHomePath",
+        "title": "Workspace Manager: Add Home Path",
+        "icon": "$(add)"
+      },
+      {
+        "command": "workspaceManager.removeHomePath",
+        "title": "Workspace Manager: Remove Home Path",
+        "icon": "$(remove)"
+      },
+      {
+        "command": "workspaceManager.refresh",
+        "title": "Workspace Manager: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "workspaceManager.toggleRepo",
+        "title": "Workspace Manager: Toggle Repo"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "workspaceManager.addHomePath",
+          "when": "view == workspaceManagerView",
+          "group": "navigation"
+        },
+        {
+          "command": "workspaceManager.removeHomePath",
+          "when": "view == workspaceManagerView",
+          "group": "navigation"
+        },
+        {
+          "command": "workspaceManager.refresh",
+          "when": "view == workspaceManagerView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Workspace Manager",
+      "properties": {
+        "workspaceManager.homePaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "List of home directories to scan for repositories."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "@types/vscode": "^1.118.0",
+    "@vscode/vsce": "^3.9.1",
+    "typescript": "^5.9.3"
+  }
+}
