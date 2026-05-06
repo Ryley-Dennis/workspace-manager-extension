@@ -2,7 +2,7 @@
   "name": "workspace-manager",
   "displayName": "Workspace Manager",
   "description": "Manage which repos from your home directories are active in the workspace",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "engines": {
     "vscode": "^1.85.0"
   },
