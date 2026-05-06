@@ -26,7 +26,7 @@ export class RepoItem extends vscode.TreeItem {
   ) {
     const hasPending = pendingState !== undefined;
     super(
-      (hasPending ? '* ' : '') + path.basename(repoPath),
+      path.basename(repoPath) + (hasPending ? ' *' : ''),
       vscode.TreeItemCollapsibleState.None
     );
     this.contextValue = 'repo';
