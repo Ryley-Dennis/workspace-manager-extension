@@ -1,7 +1,28 @@
 # TODO
 
-- [ ] Move the + and - home path buttons out of the toolbar and into a dedicated panel at the bottom of the sidebar — list current home paths each with a trash icon to remove, and a single + button to add
-- [ ] Remove the warning about not being in a `.code-workspace` file
+- [ ] Add 'Groups' feature panel above repositories list. Allows for the creation of groups of repositories, which can be toggled on and off together.
+  - A radio button next to the group name brings up a cmd input box switches to the group
+  - 'user-default-group' group is created by default and is the group that is active when no other group is selected. This group is not visible in the UI. User cannot create a group with the name 'user-default-group'.
+  - Groups are created with a plus button (or command) and a cmd input box asks for a name for the group
+  - An X next to the group name brings up a confirmation prompt to delete the group
+  - A pencil button next to the group name brings up a cmd input box to rename the group
+- [ ] Move the + and - home path buttons out of the repositories list and into a dedicated 'Home Paths' panel at the bottom of the sidebar. This panel is collapsable
+  - [ ] If no home paths are configured, show a placeholder message
+  - [ ] The current path should default on new installations if no paths are configured
+  - [ ] List current home paths each with a X icon to remove (via confirmation prompt)
+  - [ ] A single + button to add a home path
 - [ ] Keyboard shortcut: `Space` to toggle the focused repo's checkbox
 - [ ] Keyboard shortcut: `Cmd+Enter` to apply pending changes
-- [ ] Command palette interface — quick-pick flow to toggle repos and apply changes without opening the sidebar
+- [ ] Right click on a repo or group should bring up a context menu with controls relevant to the selected item
+  - [ ] Repo:
+    - [ ] Toggle checkbox
+    - [ ] Open in new window
+    - [ ] Open in new tab
+    - [ ] Open in new window
+  - [ ] Group:
+    - [ ] Toggle group
+    - [ ] Rename group
+    - [ ] Delete group
+- [ ] If a homepath is removed, show in confirmation prompt that all repos in that path will be removed from groups they are in and the current workspace
+- [ ] File watcher on home paths — if you clone a new repo into a home path, the tree won't show it until you manually hit refresh. An `fs.watch` on each home path directory would auto-refresh when folders are added or removed.
+- [ ] Search / filter — with many repos across multiple home paths, there's no way to find a repo by name without scrolling. A filter input in the view title would be high-value.
