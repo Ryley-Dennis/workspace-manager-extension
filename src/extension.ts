@@ -16,30 +16,6 @@ export function activate(context: vscode.ExtensionContext) {
     manageCheckboxStateManually: true,
   });
 
-  // ─── Warn if not in a multi-root workspace ──────────────────────────────────
-
-  function checkWorkspaceType() {
-    const workspaceFile = vscode.workspace.workspaceFile;
-    const isTrustedWorkspace = workspaceFile?.scheme === 'file';
-
-    if (!isTrustedWorkspace) {
-      vscode.window
-        .showWarningMessage(
-          'Workspace Manager works best with a .code-workspace file. ' +
-            'Without one, workspace folder changes will not persist after restart.',
-          'Create Workspace File',
-          'Dismiss'
-        )
-        .then((choice) => {
-          if (choice === 'Create Workspace File') {
-            vscode.commands.executeCommand('workbench.action.saveWorkspaceAs');
-          }
-        });
-    }
-  }
-
-  checkWorkspaceType();
-
   // ─── Checkbox toggle handler ────────────────────────────────────────────────
   // Stages the change as pending — does not apply until Apply is pressed.
 

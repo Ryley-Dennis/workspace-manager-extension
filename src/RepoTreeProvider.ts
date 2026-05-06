@@ -145,6 +145,15 @@ export class RepoTreeProvider
 
   getChildren(element?: RepoTreeItem): RepoTreeItem[] {
     if (!element) {
+      if (vscode.workspace.workspaceFile?.scheme !== 'file') {
+        const msg = new vscode.TreeItem(
+          'Open a .code-workspace file to use Workspace Manager.',
+          vscode.TreeItemCollapsibleState.None
+        );
+        msg.iconPath = new vscode.ThemeIcon('warning');
+        return [msg as RepoTreeItem];
+      }
+
       const rawPaths = getRawHomePaths();
 
       if (rawPaths.length === 0) {
