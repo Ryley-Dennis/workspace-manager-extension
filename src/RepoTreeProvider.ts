@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import * as fs from 'fs';
 import { getRawHomePaths, scanRepos, resolvePath } from './homePathManager';
 
 // ─── Tree item types ──────────────────────────────────────────────────────────
@@ -116,19 +117,26 @@ export class RepoTreeProvider
       return;
     }
 
-    // updateWorkspaceFolders doesn't update workspaceFolders synchronously, so
-    // multiple sequential calls read stale state. Instead, compute the full
-    // desired folder set and apply it in a single atomic call.
-    const current = vscode.workspace.workspaceFolders ?? [];
-    const kept = current
-      .filter((f) => !toRemove.has(f.uri.fsPath))
-      .map((f) => ({ uri: f.uri, name: f.name }));
-    const added = toAdd.map((p) => ({
-      uri: vscode.Uri.file(p),
-      name: path.basename(p),
-    }));
+    // updateWorkspaceFolders is broken for batched changes — it only reliably
+    // applies one folder per call regardless of what the API suggests. Since we
+    // already require a .code-workspace file, write the desired folder list
+    // directly to the workspace JSON and let VS Code pick up the change.
+    const workspaceFile = vscode.workspace.workspaceFile;
+    if (!workspaceFile || workspaceFile.scheme !== 'file') {
+      return;
+    }
 
-    vscode.workspace.updateWorkspaceFolders(0, current.length, ...kept, ...added);
+    const current = vscode.workspace.workspaceFolders ?? [];
+    const finalPaths = [
+      ...current.filter((f) => !toRemove.has(f.uri.fsPath)).map((f) => f.uri.fsPath),
+      ...toAdd,
+    ];
+
+    const filePath = workspaceFile.fsPath;
+    const raw = fs.readFileSync(filePath, 'utf8');
+    const json = JSON.parse(raw);
+    json.folders = finalPaths.map((p) => ({ path: p }));
+    fs.writeFileSync(filePath, JSON.stringify(json, null, '\t'));
   }
 
   private updatePendingContext(): void {
