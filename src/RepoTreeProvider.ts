@@ -99,42 +99,36 @@ export class RepoTreeProvider
 
   applyChanges(): void {
     const toAdd: string[] = [];
-    const toRemove: string[] = [];
+    const toRemove = new Set<string>();
 
     for (const [repoPath, desiredState] of this.pendingChanges) {
       if (desiredState === vscode.TreeItemCheckboxState.Checked) {
         toAdd.push(repoPath);
       } else {
-        toRemove.push(repoPath);
+        toRemove.add(repoPath);
       }
     }
 
     this.pendingChanges.clear();
     this.updatePendingContext();
 
-    // Process removes in descending index order so earlier removals don't shift later indices.
-    const snapshot = vscode.workspace.workspaceFolders ?? [];
-    const removeIndices = toRemove
-      .map((p) => snapshot.findIndex((f) => f.uri.fsPath === p))
-      .filter((i) => i !== -1)
-      .sort((a, b) => b - a);
-
-    for (const idx of removeIndices) {
-      vscode.workspace.updateWorkspaceFolders(idx, 1);
+    if (toAdd.length === 0 && toRemove.size === 0) {
+      return;
     }
 
-    for (const repoPath of toAdd) {
-      // Re-read length each iteration in case updateWorkspaceFolders is synchronous.
-      const currentLength = (vscode.workspace.workspaceFolders ?? []).length;
-      vscode.workspace.updateWorkspaceFolders(currentLength, 0, {
-        uri: vscode.Uri.file(repoPath),
-        name: path.basename(repoPath),
-      });
-    }
+    // updateWorkspaceFolders doesn't update workspaceFolders synchronously, so
+    // multiple sequential calls read stale state. Instead, compute the full
+    // desired folder set and apply it in a single atomic call.
+    const current = vscode.workspace.workspaceFolders ?? [];
+    const kept = current
+      .filter((f) => !toRemove.has(f.uri.fsPath))
+      .map((f) => ({ uri: f.uri, name: f.name }));
+    const added = toAdd.map((p) => ({
+      uri: vscode.Uri.file(p),
+      name: path.basename(p),
+    }));
 
-    // Do NOT call refresh() here. onDidChangeWorkspaceFolders fires after the
-    // workspace actually updates, so we let that drive the tree refresh and avoid
-    // reading stale workspaceFolders in getChildren.
+    vscode.workspace.updateWorkspaceFolders(0, current.length, ...kept, ...added);
   }
 
   private updatePendingContext(): void {
