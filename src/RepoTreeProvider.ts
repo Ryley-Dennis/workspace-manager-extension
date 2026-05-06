@@ -1,8 +1,31 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { parse as parseJsonc } from 'jsonc-parser';
 import { getRawHomePaths, scanRepos, resolvePath } from './homePathManager';
+
+function stripJsoncComments(input: string): string {
+  let result = '';
+  let i = 0;
+  while (i < input.length) {
+    if (input[i] === '"') {
+      result += input[i++];
+      while (i < input.length) {
+        if (input[i] === '\\') { result += input[i++]; result += input[i++]; }
+        else if (input[i] === '"') { result += input[i++]; break; }
+        else { result += input[i++]; }
+      }
+    } else if (input[i] === '/' && input[i + 1] === '/') {
+      while (i < input.length && input[i] !== '\n') { i++; }
+    } else if (input[i] === '/' && input[i + 1] === '*') {
+      i += 2;
+      while (i < input.length && !(input[i] === '*' && input[i + 1] === '/')) { i++; }
+      i += 2;
+    } else {
+      result += input[i++];
+    }
+  }
+  return result;
+}
 
 // ─── Tree item types ──────────────────────────────────────────────────────────
 
@@ -135,7 +158,7 @@ export class RepoTreeProvider
 
     const filePath = workspaceFile.fsPath;
     const raw = fs.readFileSync(filePath, 'utf8');
-    const json = parseJsonc(raw);
+    const json = JSON.parse(stripJsoncComments(raw));
     json.folders = finalPaths.map((p) => ({ path: p }));
     fs.writeFileSync(filePath, JSON.stringify(json, null, '\t'));
   }
