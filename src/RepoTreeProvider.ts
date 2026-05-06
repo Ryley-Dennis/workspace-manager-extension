@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { parse as parseJsonc } from 'jsonc-parser';
 import { getRawHomePaths, scanRepos, resolvePath } from './homePathManager';
 
 // ─── Tree item types ──────────────────────────────────────────────────────────
@@ -134,7 +135,7 @@ export class RepoTreeProvider
 
     const filePath = workspaceFile.fsPath;
     const raw = fs.readFileSync(filePath, 'utf8');
-    const json = JSON.parse(raw);
+    const json = parseJsonc(raw);
     json.folders = finalPaths.map((p) => ({ path: p }));
     fs.writeFileSync(filePath, JSON.stringify(json, null, '\t'));
   }
